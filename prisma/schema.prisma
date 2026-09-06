@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Currency {
+  GHS
+  USD
+  EUR
+}
+
+enum RiskCoverStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ReviewDecision {
+  APPROVED
+  DENIED
+}
+
+model RiskCover {
+  id          String          @id @default(uuid()) @db.Uuid
+  code        String          @unique @db.VarChar(50)
+  name        String          @db.VarChar(200)
+  description String          @db.Text
+  status      RiskCoverStatus @default(ACTIVE)
+  createdAt   DateTime        @default(now()) @db.Timestamptz(6)
+  createdBy   String          @db.VarChar(100)
+
+  policyRiskCovers PolicyRiskCover[]
+
+  @@map("risk_covers")
+}
+
+model ExchangeRateSheet {
+  id          String   @id @default(uuid()) @db.Uuid
+  reference   String   @unique @db.VarChar(50)
+  effectiveAt DateTime @unique @db.Timestamptz(6)
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdBy   String   @db.VarChar(100)
+
+  entries       ExchangeRateEntry[]
+  policies      Policy[]
+  claimPayments ClaimPayment[]
+
+  @@index([effectiveAt(sort: Desc)])
+  @@map("exchange_rate_sheets")
+}
+
+model ExchangeRateEntry {
+  id                  String   @id @default(uuid()) @db.Uuid
+  exchangeRateSheetId String   @db.Uuid
+  fromCurrency        Currency
+  toCurrency          Currency
+  rate                Decimal  @db.Decimal(23, 8)
+
+  exchangeRateSheet ExchangeRateSheet @relation(fields: [exchangeRateSheetId], references: [id], onDelete: Restrict)
+  claimPayments     ClaimPayment[]
+
+  @@unique([exchangeRateSheetId, fromCurrency, toCurrency])
+  @@index([exchangeRateSheetId, fromCurrency, toCurrency])
+  @@map("exchange_rate_entries")
+}
+
+model Policy {
+  id                  String       @id @default(uuid()) @db.Uuid
+  policyNumber        String       @unique @db.VarChar(50)
+  insuredName         String       @db.VarChar(200)
+  policyType          String       @db.VarChar(100)
+  startDate           DateTime     @db.Date
+  endDate             DateTime     @db.Date
+  currency            Currency
+  premiumAmount       Decimal?     @db.Decimal(17, 2)
+  sumInsured          Decimal      @db.Decimal(17, 2)
+  exchangeRateSheetId String       @db.Uuid
+  status              PolicyStatus @default(ACTIVE)
+  createdAt           DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime     @updatedAt @db.Timestamptz(6)
+  createdBy           String       @db.VarChar(100)
+
+  exchangeRateSheet ExchangeRateSheet @relation(fields: [exchangeRateSheetId], references: [id], onDelete: Restrict)
+  policyRiskCovers  PolicyRiskCover[]
+  claims            Claim[]
+
+  @@index([policyNumber])
+  @@index([insuredName])
+  @@index([status])
+  @@index([currency])
+  @@index([createdAt])
+  @@map("policies")
+}
+
+model PolicyRiskCover {
+  id                 String   @id @default(uuid()) @db.Uuid
+  policyId           String   @db.Uuid
+  riskCoverId        String   @db.Uuid
+  coverCodeSnapshot  String   @db.VarChar(50)
+  coverNameSnapshot  String   @db.VarChar(200)
+  coverageLimit      Decimal  @db.Decimal(17, 2)
+  deductibleAmount   Decimal  @default(0) @db.Decimal(17, 2)
+  terms              String?  @db.Text
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+  createdBy          String   @db.VarChar(100)
+
+  policy    Policy    @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  riskCover RiskCover @relation(fields: [riskCoverId], references: [id], onDelete: Restrict)
+  claims    Claim[]
+
+  @@unique([policyId, riskCoverId])
+  @@map("policy_risk_covers")
+}
+
+model Claim {
+  id                   String    @id @default(uuid()) @db.Uuid
+  claimReference       String    @unique @db.VarChar(50)
+  policyId             String    @db.Uuid
+  policyRiskCoverId    String    @db.Uuid
+  currency             Currency
+  lossDate             DateTime  @db.Date
+  dateNotified         DateTime  @db.Date
+  lossNature           String    @db.Text
+  estimatedLossAmount  Decimal   @db.Decimal(17, 2)
+  approvedPayoutAmount Decimal?  @db.Decimal(17, 2)
+  version              Int       @default(1)
+  createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy            String    @db.VarChar(100)
+
+  policy          Policy          @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  policyRiskCover PolicyRiskCover @relation(fields: [policyRiskCoverId], references: [id], onDelete: Restrict)
+  review          ClaimReview?
+  payments        ClaimPayment[]
+
+  @@index([claimReference])
+  @@index([policyId])
+  @@index([policyRiskCoverId])
+  @@index([dateNotified])
+  @@index([currency])
+  @@index([createdAt])
+  @@map("claims")
+}
+
+model ClaimReview {
+  id         String         @id @default(uuid()) @db.Uuid
+  claimId    String         @unique @db.Uuid
+  decision   ReviewDecision
+  reason     String         @db.Text
+  reviewedAt DateTime       @default(now()) @db.Timestamptz(6)
+  reviewedBy String         @db.VarChar(100)
+
+  claim Claim @relation(fields: [claimId], references: [id], onDelete: Restrict)
+
+  @@map("claim_reviews")
+}
+
+model ClaimPayment {
+  id                    String   @id @default(uuid()) @db.Uuid
+  claimId               String   @db.Uuid
+  paymentDate           DateTime @db.Date
+  amount                Decimal  @db.Decimal(17, 2)
+  currency              Currency
+  exchangeRateSheetId   String   @db.Uuid
+  exchangeRateEntryId   String?  @db.Uuid
+  appliedRate           Decimal  @db.Decimal(23, 8)
+  amountInClaimCurrency Decimal  @db.Decimal(17, 2)
+  reference             String?  @db.VarChar(100)
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+  createdBy             String   @db.VarChar(100)
+
+  claim             Claim              @relation(fields: [claimId], references: [id], onDelete: Restrict)
+  exchangeRateSheet ExchangeRateSheet  @relation(fields: [exchangeRateSheetId], references: [id], onDelete: Restrict)
+  exchangeRateEntry ExchangeRateEntry? @relation(fields: [exchangeRateEntryId], references: [id], onDelete: Restrict)
+
+  @@index([claimId, paymentDate])
+  @@index([claimId, createdAt])
+  @@map("claim_payments")
+}
