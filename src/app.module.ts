@@ -7,6 +7,7 @@ import { RiskCoversModule } from './modules/risk-covers/risk-covers.module.js';
 import { ExchangeRateSheetsModule } from './modules/exchange-rate-sheets/exchange-rate-sheets.module.js';
 import { PoliciesModule } from './modules/policies/policies.module.js';
 import { ClaimsModule } from './modules/claims/claims.module.js';
+import { ClaimPaymentsModule } from './modules/claim-payments/claim-payments.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ClaimsModule } from './modules/claims/claims.module.js';
     ExchangeRateSheetsModule,
     PoliciesModule,
     ClaimsModule,
+    ClaimPaymentsModule,
   ],
 })
 export class AppModule {}
