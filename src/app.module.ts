@@ -4,6 +4,7 @@ import { validate } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RiskCoversModule } from './modules/risk-covers/risk-covers.module.js';
+import { ExchangeRateSheetsModule } from './modules/exchange-rate-sheets/exchange-rate-sheets.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RiskCoversModule } from './modules/risk-covers/risk-covers.module.js';
     PrismaModule,
     HealthModule,
     RiskCoversModule,
+    ExchangeRateSheetsModule,
   ],
 })
 export class AppModule {}
