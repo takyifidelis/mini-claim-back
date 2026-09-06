@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RiskCoversModule } from './modules/risk-covers/risk-covers.module.js';
 import { ExchangeRateSheetsModule } from './modules/exchange-rate-sheets/exchange-rate-sheets.module.js';
+import { PoliciesModule } from './modules/policies/policies.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ExchangeRateSheetsModule } from './modules/exchange-rate-sheets/exchang
     HealthModule,
     RiskCoversModule,
     ExchangeRateSheetsModule,
+    PoliciesModule,
   ],
 })
 export class AppModule {}
