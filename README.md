@@ -50,3 +50,5 @@ Open `http://localhost:4200`. Confirm that the frontend API configuration points
 ## With more time
 
 I would add authentication and role-based authorization, a complete audit history, automated Bank of Ghana exchange-rate integration, stronger concurrency and payment-idempotency controls, broader automated test coverage, monitoring, and more detailed financial reports.
+
+I would also introduce an agent-assisted claim auditing and settlement workflow to reduce fraud, calculation errors, and manual review time. Coordinated agents would extract and structure claim documents, cross-check timelines, weather records, and contractor costs, validate claims against policy clauses and coverage limits, and calculate payouts using deterministic, high-precision rules. The workflow would support individual and batch claim processing, with a human reviewer making the final decision before settlement.
